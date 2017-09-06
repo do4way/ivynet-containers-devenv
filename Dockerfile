@@ -4,14 +4,19 @@
 
 FROM ubuntu:16.04
 
+ENV NGINX_VERSION 1.10.3-0ubuntu0.16.04.2
+
 #  update repositories
 RUN \
-  sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
-  apt-get update && \
-  apt-get -y upgrade && \
-  apt-get install -y software-properties-common && \
-  apt-get install -y byobu curl git htop man unzip vim wget && \
-  rm -rf /var/lib/apt/lists/*
+  sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list \
+  && apt-get update \
+  && apt-get -y upgrade \
+  && apt-get install -y software-properties-common  \
+  && apt-get install -y byobu curl git htop man unzip vim wget dnsutils net-tools iputils-ping  \
+  && apt-get install --no-install-recommends --no-install-suggests -y \
+                      nginx=${NGINX_VERSION} \
+  && apt-get -y --purge autoremove \
+  && rm -rf /var/lib/apt/lists/*
 
 
 # Install java
@@ -31,4 +36,12 @@ ADD root/.bashrc /root/.bashrc
 ADD root/.gitconfig /root/.gitconfig
 ADD root/.scripts /root/.scripts
 
-CMD ["bash"]
+# forward request and error logs to docker log collector
+RUN ln -sf /dev/stdout /var/log/nginx/access.log \
+	&& ln -sf /dev/stderr /var/log/nginx/error.log
+
+EXPOSE 80
+
+STOPSIGNAL SIGTERM
+
+CMD ["nginx", "-g", "daemon off;"]
