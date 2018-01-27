@@ -25,7 +25,7 @@ RUN \
 RUN \
   add-apt-repository -y ppa:gophers/archive \
   && apt-get update \
-  && apt-get install -y golang-1.9-go python2.7 \
+  && apt-get install -y golang-1.9-go python2.7 redis-tools \
   && apt-get -y --purge autoremove \
   && rm -rf /var/lib/apt/lists/*
 
@@ -62,21 +62,18 @@ ENV HADOOP_PREFIX=/opt/hadoop-$HADOOP_VERSION
 ENV HADOOP_CONF_DIR=/etc/hadoop
 ENV PATH $HADOOP_PREFIX/bin/:$PATH
 
-ADD hadoop/core-site.xml /etc/hadoop/core-site.xml
+COPY ./hadoop/core-site.xml /etc/hadoop/core-site.xml
 
 
-# install redis client
-ENV REDIS_VERSION 4.0.7
-ENV REDIS_URL http://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz
-RUN set -x \
-  && curl -fSL "$REDIS_URL" -o /tmp/redis.tar.gz \
-  && tar -xvf /tmp/redis.tar.gz -C /opt/ \
-  && rm /tmp/redis.tar.gz
-ENV REDIS_PREFIX=/opt/redis-$REDIS_VERSION
-ENV PATH $REDIS_PREFIX/bin:$PATH
+# install hbase
 
-# install psql
+ENV HBASE_VERSION 1.2.6
+ENV HBASE_INSTALL_DIR /opt/hbase
 
+RUN mkdir -p ${HBASE_INSTALL_DIR} \
+    && curl -L https://archive.apache.org/dist/hbase/${HBASE_VERSION}/hbase-${HBASE_VERSION}-bin.tar.gz | tar -xz --strip=1 -C ${HBASE_INSTALL_DIR}
+
+COPY ./hbase/hbase-site.xml ${HBASE_INSTALL_DIR}/conf/hbase-site.xml
 
 # Add files.
 ADD root/.bashrc /root/.bashrc
